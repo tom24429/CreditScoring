@@ -1,4 +1,4 @@
-/* 1. PODZIAŁ DANYCH - TRENINGOWY I TESTOWY */
+/* 1. PODZIAŁ DANYCH - 70:30 TRENING TEST */
 data Abt_app_clean;
     set Mylib.Abt_app;
     where not missing(default_cross12, act_age, app_income, act_cc, act_loaninc, app_loan_amount, act3_n_arrears);
@@ -41,7 +41,7 @@ data test_scored;
 
     prob_default_css_cross = 1/(1+exp(-_logit));
 
-    if prob_default_css_cross > 0.3 then pred_default = 1;
+    if prob_default_css_cross > 0.5 then pred_default = 1;
     else pred_default = 0;
 run;
 
@@ -50,10 +50,8 @@ proc freq data=test_scored;
     tables default_cross12 * pred_default / missing;
     title "Macierz pomyłek - Zbiór testowy (model rozszerzony)";
 run;
-
 proc means data=test_scored n mean;
     class default_cross12;
     var prob_default_css_cross;
     title "Średnie PD wg faktycznego defaultu (model rozszerzony)";
 run;
-
