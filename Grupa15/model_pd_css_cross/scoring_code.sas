@@ -41,7 +41,7 @@ data test_scored;
 
     prob_default_css_cross = 1/(1+exp(-_logit));
 
-    if prob_default_css_cross > 0.5 then pred_default = 1;
+    if prob_default_css_cross > 0.3 then pred_default = 1;
     else pred_default = 0;
 run;
 
@@ -56,3 +56,4 @@ proc means data=test_scored n mean;
     var prob_default_css_cross;
     title "Średnie PD wg faktycznego defaultu (model rozszerzony)";
 run;
+
