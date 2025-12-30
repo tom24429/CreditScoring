@@ -1,7 +1,7 @@
-/* 1. PODZIAŁ DANYCH - TYLKO Z KOMPLETNYMI default_cross12 */
+/* 1. PODZIAŁ DANYCH - TRENINGOWY I TESTOWY */
 data Abt_app_clean;
     set Mylib.Abt_app;
-    where not missing(default_cross12, act_age, app_income, act_cc);
+    where not missing(default_cross12, act_age, app_income, act_cc, act_loaninc, app_loan_amount, act3_n_arrears);
 run;
 
 data Abt_app_split;
@@ -16,29 +16,43 @@ data Abt_app_train Abt_app_test;
     else output Abt_app_test;
 run;
 
-/* 2. MODEL LOGISTYCZNY */
+/* 2. MODEL */
 proc logistic data=Abt_app_train;
-    model default_cross12 (event='1') = act_age app_income act_cc;
+    model default_cross12 (event='1') =
+          act_age
+          app_income
+          act_cc
+          act_loaninc
+          app_loan_amount
+          act3_n_arrears;
 run;
 
-/* 3. TEST NA ZBIORZE TESTOWYM */
+/* 3. SCORING ZBIORU TESTOWEGO */
 data test_scored;
     set Abt_app_test;
-    _logit = 0.7010 
-           - 0.0183 * act_age 
-           + 0.000065 * app_income 
-           + 2.2317 * act_cc;
-    
+
+    _logit = -0.5017
+             - 0.0256  * act_age
+             + 0.000207 * app_income
+             + 2.4350  * act_cc
+             + 0.1227  * act_loaninc
+             - 0.00012 * app_loan_amount
+             + 0.7447  * act3_n_arrears;
+
     prob_default_css_cross = 1/(1+exp(-_logit));
+
     if prob_default_css_cross > 0.5 then pred_default = 1;
     else pred_default = 0;
 run;
+
+/* 4. WALIDACJA NA TESTOWYM */
 proc freq data=test_scored;
     tables default_cross12 * pred_default / missing;
-    title "Macierz pomyłek - Zbiór testowy";
+    title "Macierz pomyłek - Zbiór testowy (model rozszerzony)";
 run;
+
 proc means data=test_scored n mean;
     class default_cross12;
     var prob_default_css_cross;
-    title "Średnie PD wg faktycznego defaultu";
+    title "Średnie PD wg faktycznego defaultu (model rozszerzony)";
 run;
